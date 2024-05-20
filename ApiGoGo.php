@@ -15,7 +15,7 @@ class ApiGoGo
         $this->apikey = $apikey;
         $this->url = $url;
     }
-    protected function doRequest(string $url): string
+    protected function getRequest(string $url): string
     {
         $request = curl_init();
         curl_setopt($request, CURLOPT_URL, $url);
@@ -27,12 +27,27 @@ class ApiGoGo
         curl_close($request);
         return $result;
     }
+    protected function postRequest(string $url, array $data): string
+    {
+        $request = curl_init();
+        curl_setopt($request, CURLOPT_URL, $url);
+        curl_setopt($request, CURLOPT_POST, true);
+        curl_setopt($request, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
+        if( ! $result = curl_exec($request))
+        {
+            trigger_error(curl_error($request));
+        }
+        curl_close($request);
+        return $result;
+    }
+
 }
 class CatApi extends ApiGoGo
 {
     public function getRandom(string $type, int $amount): string {
         $endpoint = "$this->url/facts/random?animal_type=$type&amount=$amount";
-        return ApiGoGo::doRequest($endpoint);
+        return ApiGoGo::getRequest($endpoint);
     }
 }
 class Agify extends ApiGoGo
@@ -46,7 +61,7 @@ class Agify extends ApiGoGo
     public function getAgify(): string
     {
         $endpoint = "$this->url?name=$this->name";
-        return ApiGoGo::doRequest($endpoint);
+        return ApiGoGo::getRequest($endpoint);
     }
 }
 class EmailValidation extends ApiGoGo
@@ -59,7 +74,21 @@ class EmailValidation extends ApiGoGo
     public function validate(): string
     {
         $endpoint = "$this->url/v1/info?email=$this->email&apikey=$this->apikey";
-        return ApiGoGo::doRequest($endpoint);
+        return ApiGoGo::getRequest($endpoint);
+    }
+}
+class ShortenUri extends ApiGoGo
+{
+    public function __construct(string $url)
+    {
+        parent::__construct($url);
+    }
+    public function shortenUri(string $uri): string
+    {
+        $data = [
+            'url' => $uri,
+        ];
+        return ApiGoGo::postRequest($this->url, $data);
     }
 }
 
